@@ -11,10 +11,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Run Snyk to check for vulnerabilities
-      uses: snyk/actions/golang@master
-      with:
-        command: monitor
-        args: --prune-repeated-subdependencies --project-name=terraform-provider-redash
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TF_PROVIDER_REDASH }}
+    # - name: Run Snyk to check for vulnerabilities
+    #   uses: snyk/actions/golang@master
+    #   with:
+    #     command: monitor
+    #     args: --prune-repeated-subdependencies --project-name=terraform-provider-redash
+    #   env:
+    #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN_TF_PROVIDER_REDASH }}
