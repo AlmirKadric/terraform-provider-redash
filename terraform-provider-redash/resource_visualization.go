@@ -81,7 +81,7 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 }
 
 func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(redash.Client)
+	c := meta.(*redash.Client)
 
 	var diags diag.Diagnostics
 

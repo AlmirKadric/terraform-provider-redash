@@ -64,7 +64,7 @@ func resourceRedashDashboardCreate(_ context.Context, d *schema.ResourceData, me
 }
 
 func resourceRedashDashboardUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(redash.Client)
+	c := meta.(*redash.Client)
 
 	var diags diag.Diagnostics
 
