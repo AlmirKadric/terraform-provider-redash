@@ -8,7 +8,7 @@ Terraform provider for managing Redash configurations.
 terraform {
   required_providers {
     redash = {
-      source  = "digitalpoetry/redash"
+      source  = "AlmirKadric/redash"
       version = "~> 0.0"
     }
   }
