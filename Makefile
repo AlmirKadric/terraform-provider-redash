@@ -1,4 +1,4 @@
-.PHONY: all format vet tidy test clean
+.PHONY: all vet format lint tidy test clean
 
 # -----------------------------------------------------------------------------
 #  CONSTANTS
@@ -30,24 +30,30 @@ bin_windows   = $(windows_dir)/$(bin_name)
 # -----------------------------------------------------------------------------
 
 all:
-	go install github.com/mitchellh/gox@latest
-	gox -osarch=linux/amd64 -output=$(bin_linux) ./$(src_dir)
-	gox -osarch=darwin/amd64 -output=$(bin_darwin) ./$(src_dir)
-	gox -osarch=windows/amd64 -output=$(bin_windows) ./$(src_dir)
+	GO111MODULE=on go get -u github.com/mitchellh/gox
+	GO111MODULE=on go install github.com/mitchellh/gox
+	GO111MODULE=on gox -osarch=linux/amd64 -output=$(bin_linux) ./$(src_dir)
+	GO111MODULE=on gox -osarch=darwin/amd64 -output=$(bin_darwin) ./$(src_dir)
+	GO111MODULE=on gox -osarch=windows/amd64 -output=$(bin_windows) ./$(src_dir)
 
 # -----------------------------------------------------------------------------
 #  FORMATTING
 # -----------------------------------------------------------------------------
 
-format:
-	go fmt ./$(src_dir)
-	gofmt -s -w ./$(src_dir)
-
 vet:
-	go vet ./$(src_dir)
+	GO111MODULE=on go vet ./$(src_dir)
+
+format:
+	GO111MODULE=on go fmt ./$(src_dir)
+	GO111MODULE=on gofmt -s -w ./$(src_dir)
+
+lint:
+	GO111MODULE=on go get -u golang.org/x/lint/golint
+	GO111MODULE=on go install golang.org/x/lint/golint
+	GO111MODULE=on golint ./$(src_dir)
 
 tidy:
-	go mod tidy
+	GO111MODULE=on go mod tidy
 
 # -----------------------------------------------------------------------------
 #  TESTING
@@ -55,9 +61,10 @@ tidy:
 
 test:
 	mkdir -p $(coverage_dir)
-	go install golang.org/x/tools/cmd/cover/...@latest
-	go test ./$(src_dir) -tags test -v -covermode=count -coverprofile=$(coverage_out)
-	go tool cover -html=$(coverage_out) -o $(coverage_html)
+	GO111MODULE=on go get -u golang.org/x/tools/cmd/cover/...
+	GO111MODULE=on go install golang.org/x/tools/cmd/cover/...
+	GO111MODULE=on go test ./$(src_dir) -tags test -v -covermode=count -coverprofile=$(coverage_out)
+	GO111MODULE=on go tool cover -html=$(coverage_out) -o $(coverage_html)
 
 # -----------------------------------------------------------------------------
 #  CLEANUP

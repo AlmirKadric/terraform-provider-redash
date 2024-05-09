@@ -1,3 +1,24 @@
+Version 0.8.3 (2023-11-01)
+--------------------------
+Bump dependencies for Snyk (#29, #30)
+Bump Go Version to 1.20 (#32)
+
+Version 0.8.2 (2023-09-13)
+--------------------------
+Bump dependencies for Snyk (#26, #27)
+
+Version 0.8.1 (2023-01-02)
+--------------------------
+Bump dependencies for Snyk (#22)
+
+Version 0.8.0 (2022-09-21)
+--------------------------
+Update Go Version to 1.18 and update dependencies (#21)
+
+Version 0.7.0 (2022-03-17)
+--------------------------
+Add SSH Tunnel support (#14)
+
 Version 0.6.0 (2021-08-17)
 --------------------------
 Add Darwin arm64 support (#12)
