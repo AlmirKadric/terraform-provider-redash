@@ -33,10 +33,10 @@ func dataSourceRedashVisualizationRead(_ context.Context, d *schema.ResourceData
 
 	var diags diag.Diagnostics
 
-	queryId := d.Get("query_id").(int)
-	visualizationId := d.Get("visualization_id").(int)
+	queryID := d.Get("query_id").(int)
+	visualizationID := d.Get("visualization_id").(int)
 
-	visualization, err := c.GetVisualization(queryId, visualizationId)
+	visualization, err := c.GetVisualization(queryID, visualizationID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

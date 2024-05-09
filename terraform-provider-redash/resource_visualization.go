@@ -40,13 +40,13 @@ func resourceRedashVisualizationRead(_ context.Context, d *schema.ResourceData, 
 
 	var diags diag.Diagnostics
 
-	queryId := d.Get("query_id").(int)
-	visualizationId, err := strconv.Atoi(d.Id())
+	queryID := d.Get("query_id").(int)
+	visualizationID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	visualization, err := c.GetVisualization(queryId, visualizationId)
+	visualization, err := c.GetVisualization(queryID, visualizationID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
