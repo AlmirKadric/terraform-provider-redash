@@ -32,6 +32,50 @@ func resourceRedashQuery() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"is_draft": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"parameters": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"title": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"enum_options": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"locals": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem:	  &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"value": {
+							// FIX BELOW TYPE
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+			"version": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -41,11 +85,15 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
+	parameters := d.Get("parameters").([]redash.QueryOptionsParameter)
 	createPayload := redash.QueryCreatePayload{
 		Name:         d.Get("name").(string),
 		Query:        d.Get("query").(string),
 		DataSourceID: d.Get("data_source_id").(int),
 		Description:  d.Get("description").(string),
+		IsDraft:      d.Get("is_draft").(bool),
+		Options:      redash.QueryOptions{ Parameters: parameters },
+		Version:      d.Get("version").(int),
 	}
 
 	query, err := c.CreateQuery(&createPayload)
@@ -78,6 +126,9 @@ func resourceRedashQueryRead(_ context.Context, d *schema.ResourceData, meta int
 	_ = d.Set("query", query.Query)
 	_ = d.Set("data_source_id", query.DataSourceID)
 	_ = d.Set("description", query.Description)
+	_ = d.Set("is_draft", query.IsDraft)
+	_ = d.Set("parameters", query.Options.Parameters)
+	_ = d.Set("version", query.Version)
 
 	return diags
 }
@@ -92,11 +143,15 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
+	parameters := d.Get("parameters").([]redash.QueryOptionsParameter)
 	updatePayload := redash.QueryUpdatePayload{
 		Name:         d.Get("name").(string),
 		Query:        d.Get("query").(string),
 		DataSourceID: d.Get("data_source_id").(int),
 		Description:  d.Get("description").(string),
+		IsDraft:      d.Get("is_draft").(bool),
+		Options:      redash.QueryOptions{ Parameters: parameters },
+		Version:      d.Get("version").(int),
 	}
 
 	_, err = c.UpdateQuery(id, &updatePayload)
