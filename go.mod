@@ -7,8 +7,6 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 )
 
-<!-- replace github.com/AlmirKadric/redash-client-go => /Users/almir.kadric/Projects/SBIDigiTrust/Projects/terraform-provider-redash/redash-client-go -->
-
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
