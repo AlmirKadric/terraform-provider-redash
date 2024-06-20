@@ -85,7 +85,7 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
-	parameters := d.Get("parameters").([]map[string]interface{})
+	parameters := d.Get("parameters").([]interface{})
 
 	options := redash.QueryOptions{
 		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
@@ -93,12 +93,12 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	for i, parameter := range parameters {
 		options.Parameters[i] = redash.QueryOptionsParameter{
-			Title:       parameter["title"].(string),
-			Name:        parameter["name"].(string),
-			Type:        parameter["type"].(string),
-			EnumOptions: parameter["enum_options"].(string),
-			Locals:      parameter["locals"].([]interface{}),
-			Value:       parameter["value"].(string),
+			Title:       parameter.(map[string]string)["title"],
+			Name:        parameter.(map[string]string)["name"],
+			Type:        parameter.(map[string]string)["type"],
+			EnumOptions: parameter.(map[string]string)["enum_options"],
+			Locals:      parameter.(map[string][]interface{})["locals"],
+			Value:       parameter.(map[string]string)["value"],
 		}
 	}
 
@@ -159,7 +159,7 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	parameters := d.Get("parameters").([]map[string]interface{})
+	parameters := d.Get("parameters").([]interface{})
 
 	options := redash.QueryOptions{
 		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
@@ -167,12 +167,12 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	for i, parameter := range parameters {
 		options.Parameters[i] = redash.QueryOptionsParameter{
-			Title:       parameter["title"].(string),
-			Name:        parameter["name"].(string),
-			Type:        parameter["type"].(string),
-			EnumOptions: parameter["enum_options"].(string),
-			Locals:      parameter["locals"].([]interface{}),
-			Value:       parameter["value"].(string),
+			Title:       parameter.(map[string]string)["title"],
+			Name:        parameter.(map[string]string)["name"],
+			Type:        parameter.(map[string]string)["type"],
+			EnumOptions: parameter.(map[string]string)["enum_options"],
+			Locals:      parameter.(map[string][]interface{})["locals"],
+			Value:       parameter.(map[string]string)["value"],
 		}
 	}
 
