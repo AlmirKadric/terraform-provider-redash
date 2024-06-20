@@ -91,14 +91,15 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
 	}
 
-	for i, parameter := range parameters {
+	for i, p := range parameters {
+		parameter := p.(map[string]interface{})
 		options.Parameters[i] = redash.QueryOptionsParameter{
-			Title:       parameter.(map[string]string)["title"],
-			Name:        parameter.(map[string]string)["name"],
-			Type:        parameter.(map[string]string)["type"],
-			EnumOptions: parameter.(map[string]string)["enum_options"],
-			Locals:      parameter.(map[string][]interface{})["locals"],
-			Value:       parameter.(map[string]string)["value"],
+			Title:       parameter["title"].(string),
+			Name:        parameter["name"].(string),
+			Type:        parameter["type"].(string),
+			EnumOptions: parameter["enum_options"].(string),
+			Locals:      parameter["locals"].([]interface{}),
+			Value:       parameter["value"].(string),
 		}
 	}
 
@@ -165,14 +166,15 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
 	}
 
-	for i, parameter := range parameters {
+	for i, p := range parameters {
+		parameter := p.(map[string]interface{})
 		options.Parameters[i] = redash.QueryOptionsParameter{
-			Title:       parameter.(map[string]string)["title"],
-			Name:        parameter.(map[string]string)["name"],
-			Type:        parameter.(map[string]string)["type"],
-			EnumOptions: parameter.(map[string]string)["enum_options"],
-			Locals:      parameter.(map[string][]interface{})["locals"],
-			Value:       parameter.(map[string]string)["value"],
+			Title:       parameter["title"].(string),
+			Name:        parameter["name"].(string),
+			Type:        parameter["type"].(string),
+			EnumOptions: parameter["enum_options"].(string),
+			Locals:      parameter["locals"].([]interface{}),
+			Value:       parameter["value"].(string),
 		}
 	}
 
