@@ -43,15 +43,15 @@ func resourceRedashQuery() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"title": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"name": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"type": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"enum_options": {
 							Type:     schema.TypeString,
@@ -67,7 +67,7 @@ func resourceRedashQuery() *schema.Resource {
 						"value": {
 							// FIX BELOW TYPE
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 					},
 				},
@@ -85,14 +85,30 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
-	parameters := d.Get("parameters").([]redash.QueryOptionsParameter)
+	parameters := d.Get("parameters").([]map[string]interface{})
+
+	options := redash.QueryOptions{
+		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
+	}
+
+	for i, parameter := range parameters {
+		options.Parameters[i] = redash.QueryOptionsParameter{
+			Title:       parameter["title"].(string),
+			Name:        parameter["name"].(string),
+			Type:        parameter["type"].(string),
+			EnumOptions: parameter["enum_options"].(string),
+			Locals:      parameter["locals"].([]interface{}),
+			Value:       parameter["value"].(string),
+		}
+	}
+
 	createPayload := redash.QueryCreatePayload{
 		Name:         d.Get("name").(string),
 		Query:        d.Get("query").(string),
 		DataSourceID: d.Get("data_source_id").(int),
 		Description:  d.Get("description").(string),
 		IsDraft:      d.Get("is_draft").(bool),
-		Options:      redash.QueryOptions{ Parameters: parameters },
+		Options:      options,
 		Version:      d.Get("version").(int),
 	}
 
@@ -143,14 +159,30 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	parameters := d.Get("parameters").([]redash.QueryOptionsParameter)
+	parameters := d.Get("parameters").([]map[string]interface{})
+
+	options := redash.QueryOptions{
+		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
+	}
+
+	for i, parameter := range parameters {
+		options.Parameters[i] = redash.QueryOptionsParameter{
+			Title:       parameter["title"].(string),
+			Name:        parameter["name"].(string),
+			Type:        parameter["type"].(string),
+			EnumOptions: parameter["enum_options"].(string),
+			Locals:      parameter["locals"].([]interface{}),
+			Value:       parameter["value"].(string),
+		}
+	}
+
 	updatePayload := redash.QueryUpdatePayload{
 		Name:         d.Get("name").(string),
 		Query:        d.Get("query").(string),
 		DataSourceID: d.Get("data_source_id").(int),
 		Description:  d.Get("description").(string),
 		IsDraft:      d.Get("is_draft").(bool),
-		Options:      redash.QueryOptions{ Parameters: parameters },
+		Options:      options,
 		Version:      d.Get("version").(int),
 	}
 
