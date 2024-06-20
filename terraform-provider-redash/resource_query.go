@@ -39,7 +39,7 @@ func resourceRedashQuery() *schema.Resource {
 			"parameters": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Elem:     &schema.Resource{
+				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"title": {
 							Type:     schema.TypeString,
@@ -60,7 +60,7 @@ func resourceRedashQuery() *schema.Resource {
 						"locals": {
 							Type:     schema.TypeList,
 							Optional: true,
-							Elem:	  &schema.Schema{
+							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
 						},
@@ -88,7 +88,7 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 	parameters := d.Get("parameters").([]interface{})
 
 	options := redash.QueryOptions{
-		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
+		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
 	}
 
 	for i, p := range parameters {
@@ -163,7 +163,7 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 	parameters := d.Get("parameters").([]interface{})
 
 	options := redash.QueryOptions{
-		Parameters:   make([]redash.QueryOptionsParameter, len(parameters)),
+		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
 	}
 
 	for i, p := range parameters {
