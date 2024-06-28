@@ -16,65 +16,70 @@ func resourceRedashQuery() *schema.Resource {
 		UpdateContext: resourceRedashQueryUpdate,
 		DeleteContext: resourceRedashQueryArchive,
 		Schema: map[string]*schema.Schema{
+			// Base Data
 			"name": {
 				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			// Query
+			"data_source_id": {
+				Type:     schema.TypeInt,
 				Required: true,
 			},
 			"query": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"data_source_id": {
-				Type:     schema.TypeInt,
-				Required: true,
-			},
-			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"is_draft": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
+			// Options
 			"parameters": {
 				Type:     schema.TypeList,
-				Optional: true,
+				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
 						"title": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"name": {
-							Type:     schema.TypeString,
+						"locals": {
+							Type:     schema.TypeList,
 							Required: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
 						},
 						"type": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"enum_options": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"locals": {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
 						"value": {
-							// FIX BELOW TYPE
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"enum_options": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
 					},
 				},
 			},
+			// State
+			"is_draft": {
+				Type:     schema.TypeBool,
+				// Optional: true,
+				Required: true,
+			},
 			"version": {
 				Type:     schema.TypeInt,
-				Optional: true,
+				// Optional: true,
+				Required: true,
 			},
 		},
 	}

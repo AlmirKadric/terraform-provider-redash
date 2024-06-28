@@ -16,195 +16,24 @@ func resourceRedashVisualization() *schema.Resource {
 		UpdateContext: resourceRedashVisualizationUpdate,
 		DeleteContext: resourceRedashVisualizationDelete,
 		Schema: map[string]*schema.Schema{
-			"query_id": {
-				Type:     schema.TypeInt,
-				Required: true,
-			},
+			// Base Data
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"type": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 			"description": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 			},
-			"chart_options": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"global_series_type": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"column_mapping": {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"column": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"axis": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-								},
-							},
-						},
-						"legend": {
-							Type:     schema.TypeList,
-							Optional: true,
-							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"enabled": {
-										Type:     schema.TypeBool,
-										Required: true,
-									},
-									"placement": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-								},
-							},
-						},
-						"series": {
-							Type:     schema.TypeList,
-							Optional: true,
-							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"stacking": {
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-						},
-						"missing_values_as_zero": {
-							Type:     schema.TypeBool,
-							Optional: true,
-						},
-						"x_axis": {
-							Type:     schema.TypeList,
-							Optional: true,
-							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"type": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"opposite": {
-										Type:     schema.TypeBool,
-										Optional: true,
-									},
-									"labels": {
-										Type:     schema.TypeList,
-										Optional: true,
-										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"enabled": {
-													Type:     schema.TypeBool,
-													Optional: true,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						"sort_x": {
-							Type:     schema.TypeBool,
-							Optional: true,
-						},
-						"y_axis": {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"type": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"opposite": {
-										Type:     schema.TypeBool,
-										Optional: true,
-									},
-									"labels": {
-										Type:     schema.TypeList,
-										Optional: true,
-										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"enabled": {
-													Type:     schema.TypeBool,
-													Optional: true,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						"series_options": {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"name": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"z_index": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
-									"index": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
-									"type": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"y_axis": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
-								},
-							},
-						},
-						"show_data_labels": {
-							Type:     schema.TypeBool,
-							Optional: true,
-						},
-						"number_format": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"percent_format": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"date_time_format": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						"text_format": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
+			// References
+			"query_id": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			// Options (By Type)
+			"type": {
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"table_options": {
 				Type:     schema.TypeList,
@@ -218,10 +47,10 @@ func resourceRedashVisualization() *schema.Resource {
 						},
 						"columns": {
 							Type:     schema.TypeList,
-							Optional: true,
+							Required: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									// Shared
+									// General
 									"visible": {
 										Type:     schema.TypeBool,
 										Required: true,
@@ -234,20 +63,21 @@ func resourceRedashVisualization() *schema.Resource {
 										Type:     schema.TypeString,
 										Required: true,
 									},
-									"align_content": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"allow_search": {
-										Type:     schema.TypeBool,
-										Required: true,
-									},
+									// Type
 									"type": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
 									"display_as": {
 										Type:     schema.TypeString,
+										Required: true,
+									},
+									"align_content": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"allow_search": {
+										Type:     schema.TypeBool,
 										Required: true,
 									},
 									"order": {
@@ -266,12 +96,12 @@ func resourceRedashVisualization() *schema.Resource {
 									// Number
 									"number_format": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
 									},
 									// Date/Time
 									"date_time_format": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
 									},
 									// Boolean
 									"boolean_values": {
@@ -317,6 +147,164 @@ func resourceRedashVisualization() *schema.Resource {
 									},
 								},
 							},
+						},
+					},
+				},
+			},
+			"chart_options": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// General
+						"global_series_type": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"column_mapping": {
+							Type:     schema.TypeList,
+							Required: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"column": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"axis": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+								},
+							},
+						},
+						"legend": {
+							Type:     schema.TypeList,
+							Required: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Type:     schema.TypeBool,
+										Required: true,
+									},
+								},
+							},
+						},
+						"series": {
+							Type:     schema.TypeList,
+							Required: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"stacking": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+								},
+							},
+						},
+						"missing_values_as_zero": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						// X-Axis
+						"x_axis": {
+							Type:     schema.TypeList,
+							Required: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"type": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"labels": {
+										Type:     schema.TypeList,
+										Optional: true,
+										MaxItems: 1,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Type:     schema.TypeBool,
+													Required: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"sort_x": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						// Y-Axis
+						"y_axis": {
+							Type:     schema.TypeList,
+							Required: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"type": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"opposite": {
+										Type:     schema.TypeBool,
+										Required: true,
+									},
+								},
+							},
+						},
+						// Series
+						"series_options": {
+							Type:     schema.TypeList,
+							Required: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"z_index": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"index": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"type": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"y_axis": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+								},
+							},
+						},
+						// Data Labels
+						"show_data_labels": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"number_format": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"percent_format": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"date_time_format": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"text_format": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
 					},
 				},
