@@ -65,7 +65,7 @@ func resourceRedashQuery() *schema.Resource {
 						},
 						"enum_options": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 						},
 					},
 				},
