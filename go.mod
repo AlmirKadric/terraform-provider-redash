@@ -8,6 +8,8 @@ require (
 	github.com/samber/lo v1.39.0
 )
 
+// replace github.com/AlmirKadric/redash-client-go => /Users/almir.kadric/Projects/SBIDigiTrust/Projects/terraform-provider-redash/redash-client-go
+
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -40,6 +42,8 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
+	github.com/mitchellh/iochan v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
