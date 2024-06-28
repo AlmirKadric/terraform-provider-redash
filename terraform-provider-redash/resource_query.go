@@ -72,12 +72,12 @@ func resourceRedashQuery() *schema.Resource {
 			},
 			// State
 			"is_draft": {
-				Type:     schema.TypeBool,
+				Type: schema.TypeBool,
 				// Optional: true,
 				Required: true,
 			},
 			"version": {
-				Type:     schema.TypeInt,
+				Type: schema.TypeInt,
 				// Optional: true,
 				Required: true,
 			},
