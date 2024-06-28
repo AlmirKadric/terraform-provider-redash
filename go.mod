@@ -3,7 +3,7 @@ module github.com/AlmirKadric/terraform-provider-redash
 go 1.20
 
 require (
-	github.com/AlmirKadric/redash-client-go v0.6.8
+	github.com/AlmirKadric/redash-client-go v0.6.9
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	github.com/samber/lo v1.39.0
 )
@@ -55,6 +55,7 @@ require (
 	github.com/zclconf/go-cty v1.14.1 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect

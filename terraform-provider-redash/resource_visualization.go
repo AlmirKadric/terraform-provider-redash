@@ -17,6 +17,10 @@ func resourceRedashVisualization() *schema.Resource {
 		DeleteContext: resourceRedashVisualizationDelete,
 		Schema: map[string]*schema.Schema{
 			// Base Data
+			"visualization_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -29,6 +33,7 @@ func resourceRedashVisualization() *schema.Resource {
 			"query_id": {
 				Type:     schema.TypeInt,
 				Required: true,
+				ForceNew: true,
 			},
 			// Options (By Type)
 			"type": {
@@ -178,6 +183,23 @@ func resourceRedashVisualization() *schema.Resource {
 								},
 							},
 						},
+						"error_y": {
+							Type:     schema.TypeList,
+							Required: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"visible": {
+										Type:     schema.TypeBool,
+										Required: true,
+									},
+									"type": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+								},
+							},
+						},
 						"legend": {
 							Type:     schema.TypeList,
 							Required: true,
@@ -200,6 +222,23 @@ func resourceRedashVisualization() *schema.Resource {
 									"stacking": {
 										Type:     schema.TypeString,
 										Optional: true,
+									},
+									"error_y": {
+										Type:     schema.TypeList,
+										Required: true,
+										MaxItems: 1,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"visible": {
+													Type:     schema.TypeBool,
+													Required: true,
+												},
+												"type": {
+													Type:     schema.TypeString,
+													Required: true,
+												},
+											},
+										},
 									},
 								},
 							},
@@ -329,9 +368,17 @@ func resourceRedashVisualizationRead(_ context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
+	// Base Data
+	_ = d.Set("visualization_id", visualization.ID)
 	_ = d.Set("name", visualization.Name)
-	_ = d.Set("type", visualization.Type)
 	_ = d.Set("description", visualization.Description)
+	// Options
+	_ = d.Set("type", visualization.Type)
+	if visualization.Type == "TABLE" {
+		_ = d.Set("table_options", visualization.Options)
+	} else if visualization.Type == "CHART" {
+		_ = d.Set("chart_options", visualization.Options)
+	}
 
 	return diags
 }
@@ -341,77 +388,17 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 
 	var diags diag.Diagnostics
 
-	var vOptions redash.VisualizationOptions
+	var vOptions interface{}
 	vType := d.Get("type").(string)
 	switch vType {
-	case "CHART":
-		chartOptions := d.Get("chart_options").([]interface{})[0].(map[string]interface{})
-		chartLegend := chartOptions["legend"].(map[string]interface{})
-		chartSeries := chartOptions["series"].(map[string]interface{})
-		chartXAxis := chartOptions["x_axis"].([]interface{})[0].(map[string]interface{})
-		chartYAxis := chartOptions["y_axis"].([]interface{})
-		chartSeriesOptions := chartOptions["series_options"].([]interface{})
-		vOptions = redash.VisualizationOptions{
-			// General
-			GlobalSeriesType: chartOptions["globalSeriesType"].(string),
-			ColumnMapping:    chartOptions["columnMapping"].(map[string]string),
-			Legend: redash.VisualizationLegendOptions{
-				Enabled:   chartLegend["enabled"].(bool),
-				Placement: chartLegend["placement"].(string),
-			},
-			Series: redash.Series{
-				Stacking: chartSeries["stacking"].(string),
-			},
-			MissingValuesAsZero: chartOptions["missingValuesAsZero"].(bool),
-			// CHART TYPE - X-Axis
-			XAxis: redash.VisualizationAxisOptions{
-				Type:     chartXAxis["type"].(string),
-				Opposite: chartXAxis["opposite"].(bool),
-				Labels: redash.VisualizationLabelOptions{
-					Enabled: chartXAxis["labels"].(map[string]interface{})["enabled"].(bool),
-				},
-			},
-			SortX: chartOptions["sortX"].(bool),
-			// CHART TYPE - Y-Axis
-			YAxis: lo.Map(chartYAxis, func(item interface{}, _ int) redash.VisualizationAxisOptions {
-				yAxis := item.(map[string]interface{})
-
-				return redash.VisualizationAxisOptions{
-					Type:     yAxis["type"].(string),
-					Opposite: yAxis["opposite"].(bool),
-					Labels: redash.VisualizationLabelOptions{
-						Enabled: yAxis["labels"].(map[string]interface{})["enabled"].(bool),
-					},
-				}
-			}),
-			// CHART TYPE - Series
-			SeriesOptions: lo.Associate(chartSeriesOptions, func(value interface{}) (string, redash.SeriesOptions) {
-				seriesOption := value.(map[string]interface{})
-
-				return seriesOption["name"].(string), redash.SeriesOptions{
-					ZIndex: seriesOption["z_index"].(int),
-					Index:  seriesOption["index"].(int),
-					Type:   seriesOption["type"].(string),
-					YAxis:  seriesOption["y_axis"].(int),
-				}
-			}),
-			// CHART TYPE - Colors
-			// CHART TYPE - Data Labels
-			ShowDataLabels: chartOptions["showDataLabels"].(bool),
-			NumberFormat:   chartOptions["numberFormat"].(string),
-			PercentFormat:  chartOptions["percentFormat"].(string),
-			DateTimeFormat: chartOptions["dateTimeFormat"].(string),
-			TextFormat:     chartOptions["textFormat"].(string),
-		}
-		break
 	case "TABLE":
 		tableOptions := d.Get("table_options").([]interface{})[0].(map[string]interface{})
 		tableColumns := tableOptions["columns"].([]interface{})
-		vOptions = redash.VisualizationOptions{
+		vOptions = redash.TableOptions{
 			ItemsPerPage: tableOptions["items_per_page"].(int),
-			Columns: lo.Map(tableColumns, func(item interface{}, _ int) redash.VisualizationColumnOptions {
+			Columns: lo.Map(tableColumns, func(item interface{}, _ int) redash.TableColumn {
 				column := item.(map[string]interface{})
-				return redash.VisualizationColumnOptions{
+				return redash.TableColumn{
 					// Shared
 					Visible:      column["visible"].(bool),
 					Name:         column["name"].(string),
@@ -444,23 +431,84 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 			}),
 		}
 		break
+	case "CHART":
+		chartOptions := d.Get("chart_options").([]interface{})[0].(map[string]interface{})
+		chartLegend := chartOptions["legend"].(map[string]interface{})
+		chartSeries := chartOptions["series"].(map[string]interface{})
+		chartXAxis := chartOptions["x_axis"].([]interface{})[0].(map[string]interface{})
+		chartYAxis := chartOptions["y_axis"].([]interface{})
+		chartSeriesOptions := chartOptions["series_options"].([]interface{})
+		vOptions = redash.ChartOptions{
+			// General
+			GlobalSeriesType: chartOptions["globalSeriesType"].(string),
+			ColumnMapping:    chartOptions["columnMapping"].(map[string]string),
+			Legend: redash.ChartLegend{
+				Enabled: chartLegend["enabled"].(bool),
+				// Placement: chartLegend["placement"].(string),
+			},
+			Series: redash.ChartSeries{
+				Stacking: chartSeries["stacking"].(string),
+			},
+			MissingValuesAsZero: chartOptions["missingValuesAsZero"].(bool),
+			// CHART TYPE - X-Axis
+			XAxis: redash.ChartXAxis{
+				Type: chartXAxis["type"].(string),
+				Labels: struct {
+					Enabled bool `json:"enabled"`
+				}{
+					Enabled: chartXAxis["labels"].(map[string]interface{})["enabled"].(bool),
+				},
+			},
+			SortX: chartOptions["sortX"].(bool),
+			// CHART TYPE - Y-Axis
+			YAxis: lo.Map(chartYAxis, func(item interface{}, _ int) redash.ChartYAxis {
+				yAxis := item.(map[string]interface{})
+
+				return redash.ChartYAxis{
+					Type:     yAxis["type"].(string),
+					Opposite: yAxis["opposite"].(bool),
+				}
+			}),
+			// CHART TYPE - Series
+			SeriesOptions: lo.Associate(chartSeriesOptions, func(value interface{}) (string, redash.ChartSeriesOption) {
+				seriesOption := value.(map[string]interface{})
+
+				return seriesOption["name"].(string), redash.ChartSeriesOption{
+					ZIndex: seriesOption["z_index"].(int),
+					Index:  seriesOption["index"].(int),
+					Type:   seriesOption["type"].(string),
+					YAxis:  seriesOption["y_axis"].(int),
+				}
+			}),
+			// CHART TYPE - Colors
+			// CHART TYPE - Data Labels
+			ShowDataLabels: chartOptions["showDataLabels"].(bool),
+			NumberFormat:   chartOptions["numberFormat"].(string),
+			PercentFormat:  chartOptions["percentFormat"].(string),
+			DateTimeFormat: chartOptions["dateTimeFormat"].(string),
+			TextFormat:     chartOptions["textFormat"].(string),
+		}
+		break
 	default:
 		return diag.Errorf("Invalid visualization type: %s", vType)
 	}
 
 	payload := redash.VisualizationCreatePayload{
-		QueryId:     d.Get("query_id").(int),
+		// Base Data
 		Name:        d.Get("name").(string),
-		Type:        d.Get("type").(string),
 		Description: d.Get("description").(string),
-		Options:     vOptions,
+		// Options
+		Type:    d.Get("type").(string),
+		Options: vOptions,
+		// References
+		QueryId: d.Get("query_id").(int),
 	}
 	visualization, err := c.CreateVisualization(&payload)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(strconv.Itoa(visualization.ID))
+	_ = d.Set("visualization_id", visualization.ID)
 
 	return diags
 }
@@ -475,18 +523,123 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 		diag.FromErr(err)
 	}
 
-	payload := redash.VisualizationUpdatePayload{
-		Name:        d.Get("name").(string),
-		Type:        d.Get("type").(string),
-		Description: d.Get("description").(string),
-		Options:     redash.VisualizationOptions{},
+	var vOptions interface{}
+	vType := d.Get("type").(string)
+	switch vType {
+	case "TABLE":
+		tableOptions := d.Get("table_options").([]interface{})[0].(map[string]interface{})
+		tableColumns := tableOptions["columns"].([]interface{})
+		vOptions = redash.TableOptions{
+			ItemsPerPage: tableOptions["items_per_page"].(int),
+			Columns: lo.Map(tableColumns, func(item interface{}, _ int) redash.TableColumn {
+				column := item.(map[string]interface{})
+				return redash.TableColumn{
+					// Shared
+					Visible:      column["visible"].(bool),
+					Name:         column["name"].(string),
+					Title:        column["title"].(string),
+					AlignContent: column["alignContent"].(string),
+					AllowSearch:  column["allowSearch"].(bool),
+					Type:         column["type"].(string),
+					DisplayAs:    column["displayAs"].(string),
+					Order:        column["order"].(int),
+					// Text
+					AllowHTML:      column["allowHTML"].(bool),
+					HighlightLinks: column["highlightLinks"].(bool),
+					// Number
+					NumberFormat: column["numberFormat"].(string),
+					// Date/Time
+					DateTimeFormat: column["dateTimeFormat"].(string),
+					// Boolean
+					BooleanValues: column["booleanValues"].([]string),
+					// Link
+					LinkUrlTemplate:   column["linkUrlTemplate"].(string),
+					LinkTextTemplate:  column["linkTextTemplate"].(string),
+					LinkOpenInNewTab:  column["linkOpenInNewTab"].(bool),
+					LinkTitleTemplate: column["linkTitleTemplate"].(string),
+					// Image
+					ImageUrlTemplate:   column["imageUrlTemplate"].(string),
+					ImageWidth:         column["imageWidth"].(string),
+					ImageHeight:        column["imageHeight"].(string),
+					ImageTitleTemplate: column["imageTitleTemplate"].(string),
+				}
+			}),
+		}
+		break
+	case "CHART":
+		chartOptions := d.Get("chart_options").([]interface{})[0].(map[string]interface{})
+		chartLegend := chartOptions["legend"].(map[string]interface{})
+		chartSeries := chartOptions["series"].(map[string]interface{})
+		chartXAxis := chartOptions["x_axis"].([]interface{})[0].(map[string]interface{})
+		chartYAxis := chartOptions["y_axis"].([]interface{})
+		chartSeriesOptions := chartOptions["series_options"].([]interface{})
+		vOptions = redash.ChartOptions{
+			// General
+			GlobalSeriesType: chartOptions["globalSeriesType"].(string),
+			ColumnMapping:    chartOptions["columnMapping"].(map[string]string),
+			Legend: redash.ChartLegend{
+				Enabled: chartLegend["enabled"].(bool),
+				// Placement: chartLegend["placement"].(string),
+			},
+			Series: redash.ChartSeries{
+				Stacking: chartSeries["stacking"].(string),
+			},
+			MissingValuesAsZero: chartOptions["missingValuesAsZero"].(bool),
+			// CHART TYPE - X-Axis
+			XAxis: redash.ChartXAxis{
+				Type: chartXAxis["type"].(string),
+				Labels: struct {
+					Enabled bool `json:"enabled"`
+				}{
+					Enabled: chartXAxis["labels"].(map[string]interface{})["enabled"].(bool),
+				},
+			},
+			SortX: chartOptions["sortX"].(bool),
+			// CHART TYPE - Y-Axis
+			YAxis: lo.Map(chartYAxis, func(item interface{}, _ int) redash.ChartYAxis {
+				yAxis := item.(map[string]interface{})
+
+				return redash.ChartYAxis{
+					Type:     yAxis["type"].(string),
+					Opposite: yAxis["opposite"].(bool),
+				}
+			}),
+			// CHART TYPE - Series
+			SeriesOptions: lo.Associate(chartSeriesOptions, func(value interface{}) (string, redash.ChartSeriesOption) {
+				seriesOption := value.(map[string]interface{})
+
+				return seriesOption["name"].(string), redash.ChartSeriesOption{
+					ZIndex: seriesOption["z_index"].(int),
+					Index:  seriesOption["index"].(int),
+					Type:   seriesOption["type"].(string),
+					YAxis:  seriesOption["y_axis"].(int),
+				}
+			}),
+			// CHART TYPE - Colors
+			// CHART TYPE - Data Labels
+			ShowDataLabels: chartOptions["showDataLabels"].(bool),
+			NumberFormat:   chartOptions["numberFormat"].(string),
+			PercentFormat:  chartOptions["percentFormat"].(string),
+			DateTimeFormat: chartOptions["dateTimeFormat"].(string),
+			TextFormat:     chartOptions["textFormat"].(string),
+		}
+		break
+	default:
+		return diag.Errorf("Invalid visualization type: %s", vType)
 	}
-	visualization, err := c.UpdateVisualization(id, &payload)
+
+	payload := redash.VisualizationUpdatePayload{
+		// Base Data
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+		// Options
+		Type:    d.Get("type").(string),
+		Options: vOptions,
+	}
+	_, err = c.UpdateVisualization(id, &payload)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	_ = d.Set("name", visualization.Name)
 
 	return diags
 }
@@ -506,7 +659,7 @@ func resourceRedashVisualizationDelete(_ context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	d.SetId("")
+	// d.SetId("")
 
 	return diags
 }

@@ -15,6 +15,11 @@ func resourceRedashWidget() *schema.Resource {
 		UpdateContext: resourceRedashWidgetUpdate,
 		DeleteContext: resourceRedashWidgetDelete,
 		Schema: map[string]*schema.Schema{
+			// Base Data
+			"widget_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"dashboard_slug": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -24,45 +29,116 @@ func resourceRedashWidget() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-			"visualization_id": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  nil,
-			},
+			//
 			"text": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
-			},
-			"is_hidden": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-			"auto_height": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Required: true,
+				// Default:  "",
 			},
 			"width": {
 				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  6,
+				Required: true,
+				// Default:  6,
 			},
-			"height": {
+			// References
+			"visualization_id": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  6,
 			},
-			"column": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  0,
-			},
-			"row": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  0,
+			// Options
+			"options": {
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"is_hidden": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"parameter_mappings": {
+							Type:     schema.TypeList,
+							Required: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"key": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"name": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"type": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"map_to": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"value": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"title": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+								},
+							},
+						},
+						"position": {
+							Type:     schema.TypeList,
+							Required: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"auto_height": {
+										Type:     schema.TypeBool,
+										Required: true,
+									},
+									"size_x": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"size_y": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"max_size_y": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"max_size_x": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"min_size_y": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"min_size_x": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"col": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"row": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+									"height": {
+										Type:     schema.TypeInt,
+										Required: true,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -99,7 +175,7 @@ func resourceRedashWidgetCreate(_ context.Context, d *schema.ResourceData, meta 
 	widget, err := c.CreateWidget(&redash.WidgetCreatePayload{
 		DashboardID:     dashboard.ID,
 		VisualizationID: d.Get("visualization_id").(int),
-		WidgetOptions: redash.WidgetOptions{
+		Options: redash.WidgetOptions{
 			IsHidden: d.Get("is_hidden").(bool),
 			Position: redash.WidgetPosition{
 				AutoHeight: d.Get("auto_height").(bool),
@@ -138,7 +214,7 @@ func resourceRedashWidgetUpdate(_ context.Context, d *schema.ResourceData, meta 
 	}
 
 	_, err = c.UpdateWidget(id, &redash.WidgetUpdatePayload{
-		WidgetOptions: redash.WidgetOptions{
+		Options: redash.WidgetOptions{
 			IsHidden: d.Get("is_hidden").(bool),
 			Position: redash.WidgetPosition{
 				AutoHeight: d.Get("auto_height").(bool),
