@@ -23,7 +23,7 @@ func resourceRedashQuery() *schema.Resource {
 			},
 			"description": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			// Query
 			"data_source_id": {

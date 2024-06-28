@@ -199,7 +199,7 @@ func resourceRedashVisualization() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									"stacking": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
 									},
 								},
 							},
