@@ -138,15 +138,15 @@ func resourceRedashVisualization() *schema.Resource {
 										Type:     schema.TypeString,
 										Required: true,
 									},
+									"image_title_template": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
 									"image_width": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
 									"image_height": {
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									"image_title_template": {
 										Type:     schema.TypeString,
 										Required: true,
 									},
@@ -403,10 +403,11 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 					Visible:      column["visible"].(bool),
 					Name:         column["name"].(string),
 					Title:        column["title"].(string),
-					AlignContent: column["alignContent"].(string),
-					AllowSearch:  column["allowSearch"].(bool),
+					// Type
 					Type:         column["type"].(string),
 					DisplayAs:    column["displayAs"].(string),
+					AlignContent: column["alignContent"].(string),
+					AllowSearch:  column["allowSearch"].(bool),
 					Order:        column["order"].(int),
 					// Text
 					AllowHTML:      column["allowHTML"].(bool),
@@ -424,9 +425,9 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 					LinkTitleTemplate: column["linkTitleTemplate"].(string),
 					// Image
 					ImageUrlTemplate:   column["imageUrlTemplate"].(string),
+					ImageTitleTemplate: column["imageTitleTemplate"].(string),
 					ImageWidth:         column["imageWidth"].(string),
 					ImageHeight:        column["imageHeight"].(string),
-					ImageTitleTemplate: column["imageTitleTemplate"].(string),
 				}
 			}),
 		}
@@ -538,10 +539,11 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 					Visible:      column["visible"].(bool),
 					Name:         column["name"].(string),
 					Title:        column["title"].(string),
-					AlignContent: column["alignContent"].(string),
-					AllowSearch:  column["allowSearch"].(bool),
+					// Type
 					Type:         column["type"].(string),
 					DisplayAs:    column["displayAs"].(string),
+					AlignContent: column["alignContent"].(string),
+					AllowSearch:  column["allowSearch"].(bool),
 					Order:        column["order"].(int),
 					// Text
 					AllowHTML:      column["allowHTML"].(bool),
@@ -559,9 +561,9 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 					LinkTitleTemplate: column["linkTitleTemplate"].(string),
 					// Image
 					ImageUrlTemplate:   column["imageUrlTemplate"].(string),
+					ImageTitleTemplate: column["imageTitleTemplate"].(string),
 					ImageWidth:         column["imageWidth"].(string),
 					ImageHeight:        column["imageHeight"].(string),
-					ImageTitleTemplate: column["imageTitleTemplate"].(string),
 				}
 			}),
 		}

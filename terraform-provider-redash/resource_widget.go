@@ -58,7 +58,7 @@ func resourceRedashWidget() *schema.Resource {
 						},
 						"parameter_mappings": {
 							Type:     schema.TypeList,
-							Required: true,
+							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"key": {
