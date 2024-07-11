@@ -79,7 +79,7 @@ func resourceRedashWidget() *schema.Resource {
 									},
 									"value": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
 									},
 									"title": {
 										Type:     schema.TypeString,
