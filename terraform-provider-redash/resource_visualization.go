@@ -400,9 +400,9 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 				column := item.(map[string]interface{})
 				return redash.TableColumn{
 					// Shared
-					Visible:      column["visible"].(bool),
-					Name:         column["name"].(string),
-					Title:        column["title"].(string),
+					Visible: column["visible"].(bool),
+					Name:    column["name"].(string),
+					Title:   column["title"].(string),
 					// Type
 					Type:         column["type"].(string),
 					DisplayAs:    column["displayAs"].(string),
@@ -536,9 +536,9 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 				column := item.(map[string]interface{})
 				return redash.TableColumn{
 					// Shared
-					Visible:      column["visible"].(bool),
-					Name:         column["name"].(string),
-					Title:        column["title"].(string),
+					Visible: column["visible"].(bool),
+					Name:    column["name"].(string),
+					Title:   column["title"].(string),
 					// Type
 					Type:         column["type"].(string),
 					DisplayAs:    column["displayAs"].(string),
