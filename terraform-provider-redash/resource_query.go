@@ -247,7 +247,7 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
-	parameters := d.Get("parameters").([]interface{})
+	parameters := d.Get("options").([]map[string]interface{})[0]["parameters"].([]interface{})
 
 	options := redash.QueryOptions{
 		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
@@ -338,7 +338,7 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	parameters := d.Get("parameters").([]interface{})
+	parameters := d.Get("options").([]map[string]interface{})[0]["parameters"].([]interface{})
 
 	options := redash.QueryOptions{
 		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
