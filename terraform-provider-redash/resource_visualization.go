@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/AlmirKadric/redash-client-go/redash"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/samber/lo"
-	"strconv"
 )
 
 func resourceRedashVisualization() *schema.Resource {
@@ -47,7 +48,7 @@ func resourceRedashVisualization() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"items_per_page": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeInt,
 							Required: true,
 						},
 						"columns": {
@@ -405,29 +406,31 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 					Title:   column["title"].(string),
 					// Type
 					Type:         column["type"].(string),
-					DisplayAs:    column["displayAs"].(string),
-					AlignContent: column["alignContent"].(string),
-					AllowSearch:  column["allowSearch"].(bool),
+					DisplayAs:    column["display_as"].(string),
+					AlignContent: column["align_content"].(string),
+					AllowSearch:  column["allow_search"].(bool),
 					Order:        column["order"].(int),
 					// Text
-					AllowHTML:      column["allowHTML"].(bool),
-					HighlightLinks: column["highlightLinks"].(bool),
+					AllowHTML:      column["allow_html"].(bool),
+					HighlightLinks: column["highlight_links"].(bool),
 					// Number
-					NumberFormat: column["numberFormat"].(string),
+					NumberFormat: column["number_format"].(string),
 					// Date/Time
-					DateTimeFormat: column["dateTimeFormat"].(string),
+					DateTimeFormat: column["date_time_format"].(string),
 					// Boolean
-					BooleanValues: column["booleanValues"].([]string),
+					BooleanValues: lo.Map(column["boolean_values"].([]interface{}), func(item interface{}, _ int) string {
+						return item.(string)
+					}),
 					// Link
-					LinkUrlTemplate:   column["linkUrlTemplate"].(string),
-					LinkTextTemplate:  column["linkTextTemplate"].(string),
-					LinkOpenInNewTab:  column["linkOpenInNewTab"].(bool),
-					LinkTitleTemplate: column["linkTitleTemplate"].(string),
+					LinkUrlTemplate:   column["link_url_template"].(string),
+					LinkTextTemplate:  column["link_text_template"].(string),
+					LinkOpenInNewTab:  column["link_open_in_new_tab"].(bool),
+					LinkTitleTemplate: column["link_title_template"].(string),
 					// Image
-					ImageUrlTemplate:   column["imageUrlTemplate"].(string),
-					ImageTitleTemplate: column["imageTitleTemplate"].(string),
-					ImageWidth:         column["imageWidth"].(string),
-					ImageHeight:        column["imageHeight"].(string),
+					ImageUrlTemplate:   column["image_url_template"].(string),
+					ImageTitleTemplate: column["image_title_template"].(string),
+					ImageWidth:         column["image_width"].(string),
+					ImageHeight:        column["image_height"].(string),
 				}
 			}),
 		}
@@ -509,6 +512,7 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
+	d.SetId(strconv.Itoa(visualization.ID))
 	_ = d.Set("visualization_id", visualization.ID)
 
 	return diags
@@ -541,29 +545,31 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 					Title:   column["title"].(string),
 					// Type
 					Type:         column["type"].(string),
-					DisplayAs:    column["displayAs"].(string),
-					AlignContent: column["alignContent"].(string),
-					AllowSearch:  column["allowSearch"].(bool),
+					DisplayAs:    column["display_as"].(string),
+					AlignContent: column["align_content"].(string),
+					AllowSearch:  column["allow_search"].(bool),
 					Order:        column["order"].(int),
 					// Text
-					AllowHTML:      column["allowHTML"].(bool),
-					HighlightLinks: column["highlightLinks"].(bool),
+					AllowHTML:      column["allow_html"].(bool),
+					HighlightLinks: column["highlight_links"].(bool),
 					// Number
-					NumberFormat: column["numberFormat"].(string),
+					NumberFormat: column["number_format"].(string),
 					// Date/Time
-					DateTimeFormat: column["dateTimeFormat"].(string),
+					DateTimeFormat: column["date_time_format"].(string),
 					// Boolean
-					BooleanValues: column["booleanValues"].([]string),
+					BooleanValues: lo.Map(column["boolean_values"].([]interface{}), func(item interface{}, _ int) string {
+						return item.(string)
+					}),
 					// Link
-					LinkUrlTemplate:   column["linkUrlTemplate"].(string),
-					LinkTextTemplate:  column["linkTextTemplate"].(string),
-					LinkOpenInNewTab:  column["linkOpenInNewTab"].(bool),
-					LinkTitleTemplate: column["linkTitleTemplate"].(string),
+					LinkUrlTemplate:   column["link_url_template"].(string),
+					LinkTextTemplate:  column["link_text_template"].(string),
+					LinkOpenInNewTab:  column["link_open_in_new_tab"].(bool),
+					LinkTitleTemplate: column["link_title_template"].(string),
 					// Image
-					ImageUrlTemplate:   column["imageUrlTemplate"].(string),
-					ImageTitleTemplate: column["imageTitleTemplate"].(string),
-					ImageWidth:         column["imageWidth"].(string),
-					ImageHeight:        column["imageHeight"].(string),
+					ImageUrlTemplate:   column["image_url_template"].(string),
+					ImageTitleTemplate: column["image_title_template"].(string),
+					ImageWidth:         column["image_width"].(string),
+					ImageHeight:        column["image_height"].(string),
 				}
 			}),
 		}

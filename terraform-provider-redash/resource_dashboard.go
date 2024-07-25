@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/AlmirKadric/redash-client-go/redash"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"strconv"
+	"github.com/samber/lo"
 )
 
 func resourceRedashDashboard() *schema.Resource {
@@ -49,7 +51,7 @@ func resourceRedashDashboard() *schema.Resource {
 			},
 			"version": {
 				Type:     schema.TypeInt,
-				Required: true,
+				Computed: true,
 			},
 			// Metadata
 			"tags": {
@@ -62,15 +64,15 @@ func resourceRedashDashboard() *schema.Resource {
 			// Dashboard Specific
 			"public_url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
 			},
 			"can_edit": {
 				Type:     schema.TypeBool,
-				Required: true,
+				Computed: true,
 			},
 			"api_key": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
 			},
 		},
 	}
@@ -86,8 +88,24 @@ func resourceRedashDashboardRead(_ context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
+	// Base Data
+	_ = d.Set("dashboard_id", dashboard.ID)
 	_ = d.Set("name", dashboard.Name)
 	_ = d.Set("slug", dashboard.Slug)
+	// Options
+	// "layout"
+	// State
+	_ = d.Set("is_favorite", dashboard.IsFavorite)
+	_ = d.Set("is_archived", dashboard.IsArchived)
+	_ = d.Set("is_draft", dashboard.IsDraft)
+	_ = d.Set("dashboard_filters_enabled", dashboard.DashboardFiltersEnabled)
+	_ = d.Set("version", dashboard.Version)
+	// Metadata
+	_ = d.Set("tags", dashboard.Tags)
+	// Dashboard Specific
+	_ = d.Set("public_url", dashboard.PublicUrl)
+	_ = d.Set("can_edit", dashboard.CanEdit)
+	_ = d.Set("api_key", dashboard.APIKey)
 
 	return diags
 }
@@ -98,7 +116,20 @@ func resourceRedashDashboardCreate(_ context.Context, d *schema.ResourceData, me
 	var diags diag.Diagnostics
 
 	createPayload := redash.DashboardCreatePayload{
+		// Base Data
 		Name: d.Get("name").(string),
+		Slug: d.Get("slug").(string),
+		// Options
+		// Layout                  []interface{}     `json:"layout"`
+		// State
+		IsFavorite:              d.Get("is_favorite").(bool),
+		IsArchived:              d.Get("is_archived").(bool),
+		IsDraft:                 d.Get("is_draft").(bool),
+		DashboardFiltersEnabled: d.Get("dashboard_filters_enabled").(bool),
+		// Metadata
+		Tags: lo.Map(d.Get("tags").([]interface{}), func(item interface{}, _ int) string {
+			return item.(string)
+		}),
 	}
 	dashboard, err := c.CreateDashboard(&createPayload)
 	if err != nil {
@@ -106,7 +137,7 @@ func resourceRedashDashboardCreate(_ context.Context, d *schema.ResourceData, me
 	}
 
 	d.SetId(strconv.Itoa(dashboard.ID))
-	_ = d.Set("name", dashboard.Name)
+	_ = d.Set("dashboard_id", dashboard.ID)
 	_ = d.Set("slug", dashboard.Slug)
 
 	return diags
@@ -123,15 +154,25 @@ func resourceRedashDashboardUpdate(_ context.Context, d *schema.ResourceData, me
 	}
 
 	updatePayload := redash.DashboardUpdatePayload{
+		// Base Data
 		Name: d.Get("name").(string),
+		Slug: d.Get("slug").(string),
+		// Options
+		// Layout                  []interface{}     `json:"layout"`
+		// State
+		IsFavorite:              d.Get("is_favorite").(bool),
+		IsArchived:              d.Get("is_archived").(bool),
+		IsDraft:                 d.Get("is_draft").(bool),
+		DashboardFiltersEnabled: d.Get("dashboard_filters_enabled").(bool),
+		// Metadata
+		Tags: lo.Map(d.Get("tags").([]interface{}), func(item interface{}, _ int) string {
+			return item.(string)
+		}),
 	}
-	dashboard, err := c.UpdateDashboard(id, &updatePayload)
+	_, err = c.UpdateDashboard(id, &updatePayload)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	_ = d.Set("name", dashboard.Name)
-	_ = d.Set("slug", dashboard.Slug)
 
 	return diags
 }
@@ -146,7 +187,7 @@ func resourceRedashDashboardArchive(_ context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	d.SetId("")
+	// d.SetId("")
 
 	return diags
 }

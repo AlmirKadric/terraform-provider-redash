@@ -36,6 +36,11 @@ all:
 	GO111MODULE=on gox -osarch=darwin/amd64 -output=$(bin_darwin) ./$(src_dir)
 	GO111MODULE=on gox -osarch=windows/amd64 -output=$(bin_windows) ./$(src_dir)
 
+osx:
+	GO111MODULE=on go get -u github.com/mitchellh/gox
+	GO111MODULE=on go install github.com/mitchellh/gox
+	GO111MODULE=on gox -osarch=darwin/amd64 -output=$(bin_darwin) ./$(src_dir)
+
 # -----------------------------------------------------------------------------
 #  FORMATTING
 # -----------------------------------------------------------------------------

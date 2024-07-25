@@ -8,6 +8,7 @@ import (
 	"github.com/AlmirKadric/redash-client-go/redash"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/samber/lo"
 )
 
 func resourceRedashQuery() *schema.Resource {
@@ -133,9 +134,8 @@ func resourceRedashQuery() *schema.Resource {
 				Required: true,
 			},
 			"is_safe": {
-				Type: schema.TypeBool,
-				// Optional: true,
-				Required: true,
+				Type:     schema.TypeBool,
+				Computed: true,
 			},
 			"version": {
 				Type: schema.TypeInt,
@@ -144,9 +144,8 @@ func resourceRedashQuery() *schema.Resource {
 			},
 			// Metadata
 			"api_key": {
-				Type: schema.TypeString,
-				// Optional: true,
-				Required: true,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"tags": {
 				Type: schema.TypeList,
@@ -158,7 +157,7 @@ func resourceRedashQuery() *schema.Resource {
 			},
 			"latest_query_data_id": {
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"schedule": {
 				Type:     schema.TypeList,
@@ -187,14 +186,12 @@ func resourceRedashQuery() *schema.Resource {
 			},
 			// Query Specific
 			"is_favorite": {
-				Type: schema.TypeBool,
-				// Optional: true,
-				Required: true,
+				Type:     schema.TypeBool,
+				Computed: true,
 			},
 			"can_edit": {
-				Type: schema.TypeBool,
-				// Optional: true,
-				Required: true,
+				Type:     schema.TypeBool,
+				Computed: true,
 			},
 		},
 	}
@@ -247,23 +244,27 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
-	parameters := d.Get("options").([]map[string]interface{})[0]["parameters"].([]interface{})
+	dOptions := d.Get("options").([]interface{})
+	dParameters := dOptions[0].(map[string]interface{})["parameters"].([]interface{})
 
 	options := redash.QueryOptions{
-		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
+		Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
 	}
 
-	for i, p := range parameters {
+	for i, p := range dParameters {
 		parameter := p.(map[string]interface{})
 
 		pType := parameter["type"].(string)
 		var pValue interface{}
 		switch pType {
-		case "string":
-			pValue = parameter["value"].([]map[string]interface{})[0]["string"].([]interface{})
+		case "text":
+		case "number":
+		case "enum":
+		case "datetime-local":
+			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
 			break
-		case "range":
-			pValue = parameter["value"].([]map[string]interface{})[0]["range"].([]interface{})
+		case "date-range":
+			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
 			break
 		default:
 			return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
@@ -285,7 +286,16 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	schedule := d.Get("schedule").([]interface{})[0].(map[string]interface{})
+	var schedule *redash.QuerySchedule = nil
+	if len(d.Get("schedule").([]interface{})) > 0 {
+		dSchedule := d.Get("schedule").([]interface{})[0].(map[string]interface{})
+		schedule = &redash.QuerySchedule{
+			Interval:  dSchedule["interval"].(int),
+			Time:      dSchedule["time"].(string),
+			DayOfWeek: dSchedule["day_of_week"].(string),
+			// Until:     schedule["until"].(interface{}),
+		}
+	}
 
 	createPayload := redash.QueryCreatePayload{
 		// Base Data
@@ -300,21 +310,12 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 		// State
 		IsDraft:    d.Get("is_draft").(bool),
 		IsArchived: d.Get("is_archived").(bool),
-		IsSafe:     d.Get("is_safe").(bool),
 		Version:    d.Get("version").(int),
 		// Metadata
-		APIKey:            d.Get("api_key").(string),
-		Tags:              d.Get("tags").([]string),
-		LatestQueryDataID: d.Get("latest_query_data_id").(int),
-		Schedule: redash.QuerySchedule{
-			Interval:  schedule["interval"].(int),
-			Time:      schedule["time"].(string),
-			DayOfWeek: schedule["day_of_week"].(string),
-			// Until:     schedule["until"].(interface{}),
-		},
-		// Query Specific
-		IsFavorite: d.Get("is_favorite").(bool),
-		CanEdit:    d.Get("can_edit").(bool),
+		Tags: lo.Map(d.Get("tags").([]interface{}), func(item interface{}, _ int) string {
+			return item.(string)
+		}),
+		Schedule: schedule,
 	}
 
 	query, err := c.CreateQuery(&createPayload)
@@ -322,6 +323,7 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
+	d.SetId(strconv.Itoa(query.ID))
 	_ = d.Set("query_id", query.ID)
 	diags = append(diags, resourceRedashQueryRead(ctx, d, meta)...)
 
@@ -338,23 +340,27 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	parameters := d.Get("options").([]map[string]interface{})[0]["parameters"].([]interface{})
+	dOptions := d.Get("options").([]interface{})
+	dParameters := dOptions[0].(map[string]interface{})["parameters"].([]interface{})
 
 	options := redash.QueryOptions{
-		Parameters: make([]redash.QueryOptionsParameter, len(parameters)),
+		Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
 	}
 
-	for i, p := range parameters {
+	for i, p := range dParameters {
 		parameter := p.(map[string]interface{})
 
 		pType := parameter["type"].(string)
 		var pValue interface{}
 		switch pType {
-		case "string":
-			pValue = parameter["value"].([]map[string]interface{})[0]["string"].([]interface{})
+		case "text":
+		case "number":
+		case "enum":
+		case "datetime-local":
+			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
 			break
-		case "range":
-			pValue = parameter["value"].([]map[string]interface{})[0]["range"].([]interface{})
+		case "date-range":
+			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
 			break
 		default:
 			return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
@@ -376,7 +382,16 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	schedule := d.Get("schedule").([]interface{})[0].(map[string]interface{})
+	var schedule *redash.QuerySchedule = nil
+	if len(d.Get("schedule").([]interface{})) > 0 {
+		dSchedule := d.Get("schedule").([]interface{})[0].(map[string]interface{})
+		schedule = &redash.QuerySchedule{
+			Interval:  dSchedule["interval"].(int),
+			Time:      dSchedule["time"].(string),
+			DayOfWeek: dSchedule["day_of_week"].(string),
+			// Until:     schedule["until"].(interface{}),
+		}
+	}
 
 	updatePayload := redash.QueryUpdatePayload{
 		// Base Data
@@ -391,21 +406,12 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		// State
 		IsDraft:    d.Get("is_draft").(bool),
 		IsArchived: d.Get("is_archived").(bool),
-		IsSafe:     d.Get("is_safe").(bool),
 		Version:    d.Get("version").(int),
 		// Metadata
-		APIKey:            d.Get("api_key").(string),
-		Tags:              d.Get("tags").([]string),
-		LatestQueryDataID: d.Get("latest_query_data_id").(int),
-		Schedule: redash.QuerySchedule{
-			Interval:  schedule["interval"].(int),
-			Time:      schedule["time"].(string),
-			DayOfWeek: schedule["day_of_week"].(string),
-			// Until:     schedule["until"].(interface{}),
-		},
-		// Query Specific
-		IsFavorite: d.Get("is_favorite").(bool),
-		CanEdit:    d.Get("can_edit").(bool),
+		Tags: lo.Map(d.Get("tags").([]interface{}), func(item interface{}, _ int) string {
+			return item.(string)
+		}),
+		Schedule: schedule,
 	}
 
 	_, err = c.UpdateQuery(id, &updatePayload)

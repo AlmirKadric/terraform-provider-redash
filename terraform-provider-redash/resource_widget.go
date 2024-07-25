@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/AlmirKadric/redash-client-go/redash"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"strconv"
 )
 
 func resourceRedashWidget() *schema.Resource {
@@ -44,6 +45,7 @@ func resourceRedashWidget() *schema.Resource {
 			"visualization_id": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				ForceNew: true,
 			},
 			// Options
 			"options": {
@@ -130,10 +132,6 @@ func resourceRedashWidget() *schema.Resource {
 										Type:     schema.TypeInt,
 										Required: true,
 									},
-									"height": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
 								},
 							},
 						},
@@ -154,10 +152,21 @@ func resourceRedashWidgetRead(_ context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	_, err = c.GetWidget(d.Get("dashboard_slug").(string), id)
+	widget, err := c.GetWidget(d.Get("dashboard_slug").(string), id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Base Data
+	_ = d.Set("widget_id", widget.ID)
+	_ = d.Set("dashboard_id", widget.DashboardID)
+	//
+	_ = d.Set("text", widget.Text)
+	_ = d.Set("width", widget.Width)
+	// References
+	_ = d.Set("visualization_id", widget.Visualization.ID)
+	// Options
+	_ = d.Set("options", widget.Options)
 
 	return diags
 }
@@ -172,32 +181,50 @@ func resourceRedashWidgetCreate(_ context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	widget, err := c.CreateWidget(&redash.WidgetCreatePayload{
-		DashboardID:     dashboard.ID,
-		VisualizationID: d.Get("visualization_id").(int),
-		Options: redash.WidgetOptions{
-			IsHidden: d.Get("is_hidden").(bool),
-			Position: redash.WidgetPosition{
-				AutoHeight: d.Get("auto_height").(bool),
-				SizeX:      d.Get("width").(int),
-				SizeY:      d.Get("height").(int),
-				MaxSizeY:   1000,
-				MaxSizeX:   6,
-				MinSizeY:   1,
-				MinSizeX:   2,
-				Col:        d.Get("column").(int),
-				Row:        d.Get("row").(int),
-			},
-			ParameterMappings: nil,
+	dOptions := d.Get("options").([]interface{})[0].(map[string]interface{})
+	dPosition := dOptions["position"].([]interface{})[0].(map[string]interface{})
+	// dParameterMappings := dOptions["parameter_mappings"].([]interface{})
+
+	options := redash.WidgetOptions{
+		IsHidden: dOptions["is_hidden"].(bool),
+		Position: redash.WidgetPosition{
+			AutoHeight: dPosition["auto_height"].(bool),
+			SizeX:      dPosition["size_x"].(int),
+			SizeY:      dPosition["size_y"].(int),
+			MaxSizeY:   dPosition["max_size_y"].(int),
+			MaxSizeX:   dPosition["max_size_x"].(int),
+			MinSizeY:   dPosition["min_size_y"].(int),
+			MinSizeX:   dPosition["min_size_x"].(int),
+			Col:        dPosition["col"].(int),
+			Row:        dPosition["row"].(int),
 		},
+		ParameterMappings: nil,
+	}
+
+	dVisualizationID := d.Get("visualization_id").(int)
+
+	var visualizationID *int = nil
+	if dVisualizationID != 0 {
+		visualizationID = &dVisualizationID
+	}
+
+	widget, err := c.CreateWidget(&redash.WidgetCreatePayload{
+		// Base Data
+		DashboardID: dashboard.ID,
+		//
 		Text:  d.Get("text").(string),
-		Width: 1,
+		Width: d.Get("width").(int),
+		// References
+		VisualizationID: visualizationID,
+		// Options
+		Options: options,
 	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(widget.ID))
+	_ = d.Set("widget_id", widget.ID)
 	_ = d.Set("dashboard_id", dashboard.ID)
 
 	return diags
@@ -213,24 +240,41 @@ func resourceRedashWidgetUpdate(_ context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	_, err = c.UpdateWidget(id, &redash.WidgetUpdatePayload{
-		Options: redash.WidgetOptions{
-			IsHidden: d.Get("is_hidden").(bool),
-			Position: redash.WidgetPosition{
-				AutoHeight: d.Get("auto_height").(bool),
-				SizeX:      d.Get("width").(int),
-				SizeY:      d.Get("height").(int),
-				MaxSizeY:   1000,
-				MaxSizeX:   6,
-				MinSizeY:   1,
-				MinSizeX:   2,
-				Col:        d.Get("column").(int),
-				Row:        d.Get("row").(int),
-			},
-			ParameterMappings: nil,
+	dOptions := d.Get("options").([]interface{})[0].(map[string]interface{})
+	dPosition := dOptions["position"].([]interface{})[0].(map[string]interface{})
+	// dParameterMappings := dOptions["parameter_mappings"].([]interface{})
+
+	options := redash.WidgetOptions{
+		IsHidden: dOptions["is_hidden"].(bool),
+		Position: redash.WidgetPosition{
+			AutoHeight: dPosition["auto_height"].(bool),
+			SizeX:      dPosition["size_x"].(int),
+			SizeY:      dPosition["size_y"].(int),
+			MaxSizeY:   dPosition["max_size_y"].(int),
+			MaxSizeX:   dPosition["max_size_x"].(int),
+			MinSizeY:   dPosition["min_size_y"].(int),
+			MinSizeX:   dPosition["min_size_x"].(int),
+			Col:        dPosition["col"].(int),
+			Row:        dPosition["row"].(int),
 		},
+		ParameterMappings: nil,
+	}
+
+	dVisualizationID := d.Get("visualization_id").(int)
+
+	var visualizationID *int = nil
+	if dVisualizationID != 0 {
+		visualizationID = &dVisualizationID
+	}
+
+	_, err = c.UpdateWidget(id, &redash.WidgetUpdatePayload{
+		//
 		Text:  d.Get("text").(string),
-		Width: 1,
+		Width: d.Get("width").(int),
+		// References
+		VisualizationID: visualizationID,
+		// Options
+		Options: options,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -254,7 +298,7 @@ func resourceRedashWidgetDelete(_ context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	d.SetId("")
+	// d.SetId("")
 
 	return diags
 }
