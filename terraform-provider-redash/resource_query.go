@@ -53,7 +53,7 @@ func resourceRedashQuery() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"parameters": {
 							Type:     schema.TypeList,
-							Required: true,
+							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"name": {
@@ -66,7 +66,7 @@ func resourceRedashQuery() *schema.Resource {
 									},
 									"parent_query_id": {
 										Type:     schema.TypeInt,
-										Required: true,
+										Optional: true,
 									},
 									// "locals": {
 									// 	Type:     schema.TypeList,
@@ -171,15 +171,15 @@ func resourceRedashQuery() *schema.Resource {
 						},
 						"time": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 						},
 						"day_of_week": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 						},
 						// "until": {
 						// 	Type:     schema.TypeString,
-						// 	Required: true,
+						// 	Optional: true,
 						// },
 					},
 				},
@@ -212,6 +212,7 @@ func resourceRedashQueryRead(_ context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
+	// TODO: fix map/array with key transformation bugs which prevent updates
 	// Base Data
 	_ = d.Set("query_id", query.ID)
 	_ = d.Set("name", query.Name)
@@ -244,45 +245,53 @@ func resourceRedashQueryCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	var diags diag.Diagnostics
 
-	dOptions := d.Get("options").([]interface{})
-	dParameters := dOptions[0].(map[string]interface{})["parameters"].([]interface{})
+	dOptions := d.Get("options").([]interface{})[0]
 
-	options := redash.QueryOptions{
-		Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
-	}
+	var options redash.QueryOptions
+	if dOptions == nil {
+		options = redash.QueryOptions{
+			Parameters: make([]redash.QueryOptionsParameter, 0),
+		}
+	} else {
+		dParameters := dOptions.(map[string]interface{})["parameters"].([]interface{})
 
-	for i, p := range dParameters {
-		parameter := p.(map[string]interface{})
-
-		pType := parameter["type"].(string)
-		var pValue interface{}
-		switch pType {
-		case "text":
-		case "number":
-		case "enum":
-		case "datetime-local":
-			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
-			break
-		case "date-range":
-			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
-			break
-		default:
-			return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
+		options = redash.QueryOptions{
+			Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
 		}
 
-		options.Parameters[i] = redash.QueryOptionsParameter{
-			Name:  parameter["name"].(string),
-			Title: parameter["title"].(string),
+		for i, p := range dParameters {
+			parameter := p.(map[string]interface{})
 
-			ParentQueryId: parameter["parent_query_id"].(int),
+			pType := parameter["type"].(string)
+			var pValue interface{}
+			switch pType {
+			case "text":
+			case "number":
+			case "enum":
+			case "datetime-local":
+				pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
+				break
+			case "date-range":
+				pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
+				break
+			default:
+				return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
+			}
 
-			// Locals: parameter["locals"].([]interface{}),
+			options.Parameters[i] = redash.QueryOptionsParameter{
+				Name:  parameter["name"].(string),
+				Title: parameter["title"].(string),
 
-			Type:        pType,
-			Value:       pValue,
-			EnumOptions: parameter["enum_options"].(string),
+				ParentQueryId: parameter["parent_query_id"].(int),
 
-			Global: parameter["global"].(bool),
+				// Locals: parameter["locals"].([]interface{}),
+
+				Type:        pType,
+				Value:       pValue,
+				EnumOptions: parameter["enum_options"].(string),
+
+				Global: parameter["global"].(bool),
+			}
 		}
 	}
 
@@ -340,45 +349,53 @@ func resourceRedashQueryUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	dOptions := d.Get("options").([]interface{})
-	dParameters := dOptions[0].(map[string]interface{})["parameters"].([]interface{})
+	dOptions := d.Get("options").([]interface{})[0]
 
-	options := redash.QueryOptions{
-		Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
-	}
+	var options redash.QueryOptions
+	if dOptions == nil {
+		options = redash.QueryOptions{
+			Parameters: make([]redash.QueryOptionsParameter, 0),
+		}
+	} else {
+		dParameters := dOptions.(map[string]interface{})["parameters"].([]interface{})
 
-	for i, p := range dParameters {
-		parameter := p.(map[string]interface{})
-
-		pType := parameter["type"].(string)
-		var pValue interface{}
-		switch pType {
-		case "text":
-		case "number":
-		case "enum":
-		case "datetime-local":
-			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
-			break
-		case "date-range":
-			pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
-			break
-		default:
-			return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
+		options = redash.QueryOptions{
+			Parameters: make([]redash.QueryOptionsParameter, len(dParameters)),
 		}
 
-		options.Parameters[i] = redash.QueryOptionsParameter{
-			Name:  parameter["name"].(string),
-			Title: parameter["title"].(string),
+		for i, p := range dParameters {
+			parameter := p.(map[string]interface{})
 
-			ParentQueryId: parameter["parent_query_id"].(int),
+			pType := parameter["type"].(string)
+			var pValue interface{}
+			switch pType {
+			case "text":
+			case "number":
+			case "enum":
+			case "datetime-local":
+				pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["string"].(interface{})
+				break
+			case "date-range":
+				pValue = parameter["value"].([]interface{})[0].(map[string]interface{})["range"].(interface{})
+				break
+			default:
+				return diag.FromErr(fmt.Errorf("Invalid parameter type: %s", pType))
+			}
 
-			// Locals: parameter["locals"].([]interface{}),
+			options.Parameters[i] = redash.QueryOptionsParameter{
+				Name:  parameter["name"].(string),
+				Title: parameter["title"].(string),
 
-			Type:        pType,
-			Value:       pValue,
-			EnumOptions: parameter["enum_options"].(string),
+				ParentQueryId: parameter["parent_query_id"].(int),
 
-			Global: parameter["global"].(bool),
+				// Locals: parameter["locals"].([]interface{}),
+
+				Type:        pType,
+				Value:       pValue,
+				EnumOptions: parameter["enum_options"].(string),
+
+				Global: parameter["global"].(bool),
+			}
 		}
 	}
 

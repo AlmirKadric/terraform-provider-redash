@@ -7,6 +7,7 @@ import (
 	"github.com/AlmirKadric/redash-client-go/redash"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/samber/lo"
 )
 
 func resourceRedashWidget() *schema.Resource {
@@ -157,6 +158,7 @@ func resourceRedashWidgetRead(_ context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	// TODO: fix map/array with key transformation bugs which prevent updates
 	// Base Data
 	_ = d.Set("widget_id", widget.ID)
 	_ = d.Set("dashboard_id", widget.DashboardID)
@@ -183,7 +185,7 @@ func resourceRedashWidgetCreate(_ context.Context, d *schema.ResourceData, meta 
 
 	dOptions := d.Get("options").([]interface{})[0].(map[string]interface{})
 	dPosition := dOptions["position"].([]interface{})[0].(map[string]interface{})
-	// dParameterMappings := dOptions["parameter_mappings"].([]interface{})
+	dParameterMappings := dOptions["parameter_mappings"].([]interface{})
 
 	options := redash.WidgetOptions{
 		IsHidden: dOptions["is_hidden"].(bool),
@@ -198,7 +200,17 @@ func resourceRedashWidgetCreate(_ context.Context, d *schema.ResourceData, meta 
 			Col:        dPosition["col"].(int),
 			Row:        dPosition["row"].(int),
 		},
-		ParameterMappings: nil,
+		ParameterMappings: lo.Associate(dParameterMappings, func(value interface{}) (string, redash.WidgetParameterMapping) {
+			paramMapping := value.(map[string]interface{})
+
+			return paramMapping["key"].(string), redash.WidgetParameterMapping{
+				Name:  paramMapping["name"].(string),
+				Type:  paramMapping["type"].(string),
+				MapTo: paramMapping["map_to"].(string),
+				Value: paramMapping["value"].(string),
+				Title: paramMapping["title"].(string),
+			}
+		}),
 	}
 
 	dVisualizationID := d.Get("visualization_id").(int)
@@ -242,7 +254,7 @@ func resourceRedashWidgetUpdate(_ context.Context, d *schema.ResourceData, meta 
 
 	dOptions := d.Get("options").([]interface{})[0].(map[string]interface{})
 	dPosition := dOptions["position"].([]interface{})[0].(map[string]interface{})
-	// dParameterMappings := dOptions["parameter_mappings"].([]interface{})
+	dParameterMappings := dOptions["parameter_mappings"].([]interface{})
 
 	options := redash.WidgetOptions{
 		IsHidden: dOptions["is_hidden"].(bool),
@@ -257,7 +269,17 @@ func resourceRedashWidgetUpdate(_ context.Context, d *schema.ResourceData, meta 
 			Col:        dPosition["col"].(int),
 			Row:        dPosition["row"].(int),
 		},
-		ParameterMappings: nil,
+		ParameterMappings: lo.Associate(dParameterMappings, func(value interface{}) (string, redash.WidgetParameterMapping) {
+			paramMapping := value.(map[string]interface{})
+
+			return paramMapping["key"].(string), redash.WidgetParameterMapping{
+				Name:  paramMapping["name"].(string),
+				Type:  paramMapping["type"].(string),
+				MapTo: paramMapping["map_to"].(string),
+				Value: paramMapping["value"].(string),
+				Title: paramMapping["title"].(string),
+			}
+		}),
 	}
 
 	dVisualizationID := d.Get("visualization_id").(int)

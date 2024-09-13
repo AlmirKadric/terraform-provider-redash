@@ -186,7 +186,7 @@ func resourceRedashVisualization() *schema.Resource {
 						},
 						"error_y": {
 							Type:     schema.TypeList,
-							Required: true,
+							Optional: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -226,7 +226,7 @@ func resourceRedashVisualization() *schema.Resource {
 									},
 									"error_y": {
 										Type:     schema.TypeList,
-										Required: true,
+										Optional: true,
 										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -291,7 +291,7 @@ func resourceRedashVisualization() *schema.Resource {
 									},
 									"opposite": {
 										Type:     schema.TypeBool,
-										Required: true,
+										Optional: true,
 									},
 								},
 							},
@@ -369,6 +369,7 @@ func resourceRedashVisualizationRead(_ context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
+	// TODO: fix map/array with key transformation bugs which prevent updates
 	// Base Data
 	_ = d.Set("visualization_id", visualization.ID)
 	_ = d.Set("name", visualization.Name)
@@ -437,33 +438,60 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 		break
 	case "CHART":
 		chartOptions := d.Get("chart_options").([]interface{})[0].(map[string]interface{})
-		chartLegend := chartOptions["legend"].(map[string]interface{})
-		chartSeries := chartOptions["series"].(map[string]interface{})
-		chartXAxis := chartOptions["x_axis"].([]interface{})[0].(map[string]interface{})
+
+		var chartLegend map[string]interface{}
+		dChartLegend := chartOptions["legend"].([]interface{})[0]
+		if dChartLegend != nil {
+			chartLegend = dChartLegend.(map[string]interface{})
+		}
+
+		var chartSeries map[string]interface{}
+		dChartSeries := chartOptions["series"].([]interface{})[0]
+		if dChartSeries != nil {
+			chartSeries = dChartSeries.(map[string]interface{})
+		}
+
+		var chartXAxis map[string]interface{}
+		dChartXAxis := chartOptions["x_axis"].([]interface{})[0]
+		if dChartXAxis != nil {
+			chartXAxis = dChartXAxis.(map[string]interface{})
+		}
+
 		chartYAxis := chartOptions["y_axis"].([]interface{})
 		chartSeriesOptions := chartOptions["series_options"].([]interface{})
 		vOptions = redash.ChartOptions{
 			// General
-			GlobalSeriesType: chartOptions["globalSeriesType"].(string),
-			ColumnMapping:    chartOptions["columnMapping"].(map[string]string),
+			GlobalSeriesType: chartOptions["global_series_type"].(string),
+			ColumnMapping: lo.Associate(
+				chartOptions["column_mapping"].([]interface{}),
+				func(item interface{}) (string, string) {
+					axis := item.(map[string]interface{})["axis"].(string)
+					column := item.(map[string]interface{})["column"].(string)
+					return axis, column
+				},
+			),
 			Legend: redash.ChartLegend{
 				Enabled: chartLegend["enabled"].(bool),
 				// Placement: chartLegend["placement"].(string),
 			},
 			Series: redash.ChartSeries{
-				Stacking: chartSeries["stacking"].(string),
+				Stacking: lo.TernaryF(
+					chartSeries["stacking"] != nil,
+					func() *string { return lo.EmptyableToPtr(chartSeries["stacking"].(string)) },
+					func() *string { return nil },
+				),
 			},
-			MissingValuesAsZero: chartOptions["missingValuesAsZero"].(bool),
+			MissingValuesAsZero: chartOptions["missing_values_as_zero"].(bool),
 			// CHART TYPE - X-Axis
 			XAxis: redash.ChartXAxis{
 				Type: chartXAxis["type"].(string),
 				Labels: struct {
 					Enabled bool `json:"enabled"`
 				}{
-					Enabled: chartXAxis["labels"].(map[string]interface{})["enabled"].(bool),
+					Enabled: chartXAxis["labels"].([]interface{})[0].(map[string]interface{})["enabled"].(bool),
 				},
 			},
-			SortX: chartOptions["sortX"].(bool),
+			SortX: chartOptions["sort_x"].(bool),
 			// CHART TYPE - Y-Axis
 			YAxis: lo.Map(chartYAxis, func(item interface{}, _ int) redash.ChartYAxis {
 				yAxis := item.(map[string]interface{})
@@ -486,11 +514,11 @@ func resourceRedashVisualizationCreate(_ context.Context, d *schema.ResourceData
 			}),
 			// CHART TYPE - Colors
 			// CHART TYPE - Data Labels
-			ShowDataLabels: chartOptions["showDataLabels"].(bool),
-			NumberFormat:   chartOptions["numberFormat"].(string),
-			PercentFormat:  chartOptions["percentFormat"].(string),
-			DateTimeFormat: chartOptions["dateTimeFormat"].(string),
-			TextFormat:     chartOptions["textFormat"].(string),
+			ShowDataLabels: chartOptions["show_data_labels"].(bool),
+			NumberFormat:   chartOptions["number_format"].(string),
+			PercentFormat:  chartOptions["percent_format"].(string),
+			DateTimeFormat: chartOptions["date_time_format"].(string),
+			TextFormat:     chartOptions["text_format"].(string),
 		}
 		break
 	default:
@@ -576,33 +604,60 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 		break
 	case "CHART":
 		chartOptions := d.Get("chart_options").([]interface{})[0].(map[string]interface{})
-		chartLegend := chartOptions["legend"].(map[string]interface{})
-		chartSeries := chartOptions["series"].(map[string]interface{})
-		chartXAxis := chartOptions["x_axis"].([]interface{})[0].(map[string]interface{})
+
+		var chartLegend map[string]interface{}
+		dChartLegend := chartOptions["legend"].([]interface{})[0]
+		if dChartLegend != nil {
+			chartLegend = dChartLegend.(map[string]interface{})
+		}
+
+		var chartSeries map[string]interface{}
+		dChartSeries := chartOptions["series"].([]interface{})[0]
+		if dChartSeries != nil {
+			chartSeries = dChartSeries.(map[string]interface{})
+		}
+
+		var chartXAxis map[string]interface{}
+		dChartXAxis := chartOptions["x_axis"].([]interface{})[0]
+		if dChartXAxis != nil {
+			chartXAxis = dChartXAxis.(map[string]interface{})
+		}
+
 		chartYAxis := chartOptions["y_axis"].([]interface{})
 		chartSeriesOptions := chartOptions["series_options"].([]interface{})
 		vOptions = redash.ChartOptions{
 			// General
-			GlobalSeriesType: chartOptions["globalSeriesType"].(string),
-			ColumnMapping:    chartOptions["columnMapping"].(map[string]string),
+			GlobalSeriesType: chartOptions["global_series_type"].(string),
+			ColumnMapping: lo.Associate(
+				chartOptions["column_mapping"].([]interface{}),
+				func(item interface{}) (string, string) {
+					axis := item.(map[string]interface{})["axis"].(string)
+					column := item.(map[string]interface{})["column"].(string)
+					return axis, column
+				},
+			),
 			Legend: redash.ChartLegend{
 				Enabled: chartLegend["enabled"].(bool),
 				// Placement: chartLegend["placement"].(string),
 			},
 			Series: redash.ChartSeries{
-				Stacking: chartSeries["stacking"].(string),
+				Stacking: lo.TernaryF(
+					chartSeries["stacking"] != nil,
+					func() *string { return lo.EmptyableToPtr(chartSeries["stacking"].(string)) },
+					func() *string { return nil },
+				),
 			},
-			MissingValuesAsZero: chartOptions["missingValuesAsZero"].(bool),
+			MissingValuesAsZero: chartOptions["missing_values_as_zero"].(bool),
 			// CHART TYPE - X-Axis
 			XAxis: redash.ChartXAxis{
 				Type: chartXAxis["type"].(string),
 				Labels: struct {
 					Enabled bool `json:"enabled"`
 				}{
-					Enabled: chartXAxis["labels"].(map[string]interface{})["enabled"].(bool),
+					Enabled: chartXAxis["labels"].([]interface{})[0].(map[string]interface{})["enabled"].(bool),
 				},
 			},
-			SortX: chartOptions["sortX"].(bool),
+			SortX: chartOptions["sort_x"].(bool),
 			// CHART TYPE - Y-Axis
 			YAxis: lo.Map(chartYAxis, func(item interface{}, _ int) redash.ChartYAxis {
 				yAxis := item.(map[string]interface{})
@@ -625,11 +680,11 @@ func resourceRedashVisualizationUpdate(_ context.Context, d *schema.ResourceData
 			}),
 			// CHART TYPE - Colors
 			// CHART TYPE - Data Labels
-			ShowDataLabels: chartOptions["showDataLabels"].(bool),
-			NumberFormat:   chartOptions["numberFormat"].(string),
-			PercentFormat:  chartOptions["percentFormat"].(string),
-			DateTimeFormat: chartOptions["dateTimeFormat"].(string),
-			TextFormat:     chartOptions["textFormat"].(string),
+			ShowDataLabels: chartOptions["show_data_labels"].(bool),
+			NumberFormat:   chartOptions["number_format"].(string),
+			PercentFormat:  chartOptions["percent_format"].(string),
+			DateTimeFormat: chartOptions["date_time_format"].(string),
+			TextFormat:     chartOptions["text_format"].(string),
 		}
 		break
 	default:
